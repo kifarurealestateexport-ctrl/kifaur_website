@@ -27,6 +27,8 @@ const WHITE = '#ffffff'
 
 // ─── BASE LAYOUT ─────────────────────────────────────────────────────────────
 function baseLayout(title, bodyHtml) {
+  const siteUrl = process.env.SITE_URL || 'https://kifarugroup.co.tz'
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,10 +44,15 @@ function baseLayout(title, bodyHtml) {
   <!-- HEADER -->
   <tr>
     <td style="background:${NAVY};border-radius:10px 10px 0 0;padding:30px 40px;text-align:center;">
-      <div style="display:inline-block;background:${RED};border-radius:6px;padding:9px 22px;margin-bottom:12px;">
-        <span style="font-family:Georgia,serif;font-weight:bold;font-size:24px;color:#fff;letter-spacing:4px;">KIFARU</span>
-      </div>
-      <br/>
+
+      <!-- LOGO IMAGE -->
+      <img
+        src="${siteUrl}/uploads/logo.png"
+        alt="KIFARU"
+        width="140"
+        style="height:70px;width:auto;max-width:160px;object-fit:contain;display:block;margin:0 auto 12px;border:0;"
+      />
+
       <span style="color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:2px;text-transform:uppercase;">Real Estate &amp; Building Co. Ltd</span>
       <br/>
       <span style="color:rgba(255,255,255,0.4);font-size:11px;font-style:italic;">Tunajenga kwa gharama nafuu</span>
@@ -190,7 +197,7 @@ function adminBody(data) {
     dateStyle: 'full',
     timeStyle: 'short',
   })
-  const siteUrl  = process.env.SITE_URL || 'http://localhost:3000'
+  const siteUrl  = process.env.SITE_URL || 'https://kifarugroup.co.tz'
   const waNumber = (phone || '').replace(/\D/g, '')
   const waMsg    = encodeURIComponent(`Hello ${name || ''}, this is Kifaru Building Company. We received your request and would like to discuss your project.`)
 
