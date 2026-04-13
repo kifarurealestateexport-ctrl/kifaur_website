@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply font-sans text-gray-800 bg-white; }
+  h1,h2,h3,h4,h5 { @apply font-heading; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-red text-white font-semibold text-sm tracking-wide rounded-sm hover:bg-red-700 active:scale-95 transition-all duration-200 cursor-pointer whitespace-nowrap;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-brand-navy text-brand-navy font-semibold text-sm tracking-wide rounded-sm hover:bg-brand-navy hover:text-white active:scale-95 transition-all duration-200 cursor-pointer whitespace-nowrap;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/15 backdrop-blur-sm text-white font-semibold text-sm tracking-wide rounded-sm hover:bg-white/25 active:scale-95 transition-all duration-200 cursor-pointer whitespace-nowrap border border-white/30;
+  }
+  .section-title {
+    @apply font-heading text-3xl md:text-4xl font-bold text-brand-navy leading-tight;
+  }
+  .section-subtitle {
+    @apply text-xs font-bold tracking-widest text-brand-red uppercase mb-3;
+  }
+  .section-subtitle-gold {
+    @apply text-xs font-bold tracking-widest text-brand-gold uppercase mb-3;
+  }
+  .card { @apply bg-white border border-gray-100 rounded-sm shadow-sm; }
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-sm text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-brand-navy transition-colors;
+  }
+  .page-hero { @apply bg-brand-navy py-20 px-4; }
+  .gold-line  { @apply w-12 h-0.5 bg-brand-red mt-3 mb-6; }
+  .admin-label { @apply block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5; }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #C0392B; border-radius: 3px; }
