@@ -3,7 +3,9 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
-      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http',  hostname: 'localhost' },
+      { protocol: 'https', hostname: 'kifaru-server.onrender.com' },
+      { protocol: 'https', hostname: 'kifarugroup.co.tz' },
     ],
   },
 }
