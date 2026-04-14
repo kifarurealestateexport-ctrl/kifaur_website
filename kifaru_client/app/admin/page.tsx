@@ -355,9 +355,9 @@ export default function AdminPage() {
               {/* Credentials hint */}
               <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <p className="text-xs text-gray-400 text-center">
+                {/* <p className="text-xs text-gray-400 text-center">
                   Default: <span className="font-semibold text-gray-500">admin</span> / <span className="font-semibold text-gray-500">kifaru2025</span>
-                </p>
+                </p> */}
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
               </div>
             </div>
