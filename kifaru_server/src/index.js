@@ -12,7 +12,6 @@ const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../upload
 fs.mkdirSync(uploadsDir, { recursive: true })
 console.log('✅ Serving uploads from:', uploadsDir)
 
-// ✅ All allowed origins including both your production domains
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -24,7 +23,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
@@ -38,27 +36,6 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 app.use('/uploads', express.static(uploadsDir))
-
-// TEMPORARY SEED ROUTE - REMOVE AFTER USE
-app.get('/seed-admin-once', async (req, res) => {
-  const secret = req.query.secret
-  if (secret !== process.env.SEED_SECRET) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-  try {
-    const Admin = require('./models/Admin')
-    await Admin.deleteMany({})
-    await Admin.create({
-      email:    process.env.ADMIN_EMAIL    || 'admin@kifarugroup.co.tz',
-      password: process.env.ADMIN_PASSWORD || 'Admin@kifaru2026',
-      name:     'Kifaru Administrator',
-      role:     'admin',
-    })
-    res.json({ success: true, message: '✅ Admin seeded successfully!' })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
 
 app.use('/api/auth',         require('./routes/auth'))
 app.use('/api/properties',   require('./routes/properties'))
