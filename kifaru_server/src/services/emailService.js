@@ -1,23 +1,7 @@
-const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 
-// ─── TRANSPORTER ─────────────────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST || 'smtp.hostinger.com',
-  port:   Number(process.env.SMTP_PORT) || 465,
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: { rejectUnauthorized: false },
-  family: 4, // ✅ Force IPv4 — prevents ENETUNREACH on IPv6-blocked hosts
-})
-
-transporter.verify().then(() => {
-  console.log('✅ Email SMTP ready — Hostinger connected')
-}).catch(err => {
-  console.warn('⚠️  Email SMTP:', err.message)
-})
+// ─── RESEND CLIENT ────────────────────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY || 're_ENtUyKBA_4pyDSUe2mSdExqirfHwnwSWh')
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const NAVY  = '#1a237e'
@@ -273,13 +257,12 @@ async function sendBookingEmails(bookingData) {
   const { name, phone, email, service } = bookingData
 
   const adminEmail = process.env.ADMIN_EMAIL || 'info@kifarugroup.co.tz'
-  const fromName   = 'Kifaru Real Estate & Building'
-  const fromAddr   = process.env.SMTP_USER
+  const fromAddr   = 'Kifaru Real Estate <info@kifarugroup.co.tz>'
 
-  // Skip if SMTP not configured
-  if (!fromAddr) {
-    console.log('⚠️  SMTP_USER not set — skipping email')
-    return { success: false, errors: ['SMTP_USER not configured'] }
+  // Skip if RESEND_API_KEY not configured
+  if (!process.env.RESEND_API_KEY && !resend) {
+    console.log('⚠️  RESEND_API_KEY not set — skipping email')
+    return { success: false, errors: ['RESEND_API_KEY not configured'] }
   }
 
   const errors = []
@@ -287,8 +270,8 @@ async function sendBookingEmails(bookingData) {
   // 1. Client confirmation
   if (email && email.includes('@')) {
     try {
-      await transporter.sendMail({
-        from:    `"${fromName}" <${fromAddr}>`,
+      await resend.emails.send({
+        from:    fromAddr,
         to:      email,
         subject: `✅ Request Received — Kifaru Building Co.`,
         html:    baseLayout('Your Request Has Been Received', clientBody(bookingData)),
@@ -302,10 +285,10 @@ async function sendBookingEmails(bookingData) {
 
   // 2. Admin notification
   try {
-    await transporter.sendMail({
-      from:    `"${fromName}" <${fromAddr}>`,
+    await resend.emails.send({
+      from:    fromAddr,
       to:      adminEmail,
-      replyTo: email || fromAddr,
+      replyTo: email || 'info@kifarugroup.co.tz',
       subject: `🔔 New Booking: ${name} — ${service}`,
       html:    baseLayout('New Booking Request — Admin Alert', adminBody(bookingData)),
     })
@@ -318,4 +301,4 @@ async function sendBookingEmails(bookingData) {
   return { success: errors.length === 0, errors }
 }
 
-module.exports = { sendBookingEmails, transporter }
+module.exports = { sendBookingEmails }
