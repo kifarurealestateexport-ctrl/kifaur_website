@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
   tls: { rejectUnauthorized: false },
+  family: 4, // ✅ Force IPv4 — prevents ENETUNREACH on IPv6-blocked hosts
 })
 
 transporter.verify().then(() => {
