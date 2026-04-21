@@ -1,16 +1,25 @@
 const multer = require('multer')
+const cloudinary = require('cloudinary').v2
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
 const path = require('path')
-const fs = require('fs')
-const { v4: uuidv4 } = require('uuid')
 
-const UPLOADS_DIR = path.join(__dirname, '../../../uploads')
-fs.mkdirSync(UPLOADS_DIR, { recursive: true })
-console.log('✅ Uploads dir:', UPLOADS_DIR)
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename:    (req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// ✅ No fileFilter — removing it fixes req.body being empty when no file is attached
-module.exports = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } })
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder:          'kifaru',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'],
+    public_id:       `${Date.now()}-${path.parse(file.originalname).name}`,
+    transformation:  [{ quality: 'auto', fetch_format: 'auto' }],
+  }),
+})
+
+module.exports = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+})

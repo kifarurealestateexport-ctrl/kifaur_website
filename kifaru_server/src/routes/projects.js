@@ -11,7 +11,10 @@ router.get('/', async (req, res) => {
 
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const item = await Project.create({ ...req.body, image: req.file?.filename || req.body.image || '' })
+    const item = await Project.create({
+      ...req.body,
+      image: req.file?.path || req.body.image || '',
+    })
     res.status(201).json(item)
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
@@ -22,7 +25,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Not found' })
     const updated = await Project.findByIdAndUpdate(req.params.id, {
       ...req.body,
-      image: req.file?.filename || existing.image
+      image: req.file?.path || existing.image,
     }, { new: true })
     res.json(updated)
   } catch (err) { res.status(400).json({ error: err.message }) }

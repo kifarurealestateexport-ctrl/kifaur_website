@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Image required' })
-    res.status(201).json(await Gallery.create({ ...req.body, image: req.file.filename }))
+    res.status(201).json(await Gallery.create({ ...req.body, image: req.file.path }))
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
 

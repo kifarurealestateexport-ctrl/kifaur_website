@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', auth, upload.single('photo'), async (req, res) => {
   try {
-    const item = await Agent.create({ ...req.body, photo: req.file?.filename || '' })
+    const item = await Agent.create({ ...req.body, photo: req.file?.path || '' })
     res.status(201).json(item)
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
@@ -21,7 +21,7 @@ router.put('/:id', auth, upload.single('photo'), async (req, res) => {
     const existing = await Agent.findById(req.params.id)
     if (!existing) return res.status(404).json({ error: 'Not found' })
     const updated = await Agent.findByIdAndUpdate(req.params.id, {
-      ...req.body, photo: req.file?.filename || existing.photo
+      ...req.body, photo: req.file?.path || existing.photo
     }, { new: true })
     res.json(updated)
   } catch (err) { res.status(400).json({ error: err.message }) }
