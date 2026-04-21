@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, Home, Building2, TreePine, TrendingUp, Shield, Users, Star,
-  ArrowRight, MapPin, Phone, CheckCircle, Play, Pause, ChevronRight, Volume2, VolumeX
+  ArrowRight, MapPin, Phone, CheckCircle, Play, Pause, ChevronRight, Volume2, VolumeX,
+  Tag, Bell, ExternalLink
 } from 'lucide-react'
 import PropertyCard, { Property } from '@/components/ui/PropertyCard'
 import BookingForm from '@/components/ui/BookingForm'
-import { getProperties, getTestimonials, getProjects } from '@/lib/api'
+import { getProperties, getTestimonials, getProjects, getOffers, getClientLogos } from '@/lib/api'
 
 const API = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'
 
@@ -20,16 +21,62 @@ const categories = [
 ]
 
 const whyUs = [
-  { icon: Shield,     title: 'CRB Registered',  desc: "Class 5 building contractor registered with Tanzania's Contractor Registration Board since 2007." },
+  { icon: Shield,     title: 'CRB Registered',  desc: "Class 4 building contractor registered with Tanzania's Contractor Registration Board." },
   { icon: Users,      title: 'Expert Team',      desc: 'Architects, civil engineers, surveyors and certified tradespeople on every project.' },
   { icon: TrendingUp, title: 'Honest Prices',    desc: 'Build your dream home at transparent prices. Pay only after handover — no upfront risk.' },
   { icon: Star,       title: 'Full Support',     desc: 'From first consultation to final handover — we guide you every step of the way.' },
 ]
 
+// Fallback offers shown if DB is empty
+const fallbackOffers = [
+  {
+    _id: 'f1',
+    type: 'offer',
+    title: 'Free Site Assessment',
+    body: 'Book a consultation this month and get a free site assessment valued at TZS 500,000.',
+    badge: 'Limited Time',
+    color: 'red',
+    link: '/contact',
+    linkLabel: 'Book Now',
+    image: null,
+  },
+  {
+    _id: 'f2',
+    type: 'announcement',
+    title: 'New Floor Plans Available',
+    body: 'We have added 5 new 3-bedroom and 4-bedroom house packages. Pay after handover.',
+    badge: 'New',
+    color: 'navy',
+    link: '/floorplans',
+    linkLabel: 'View Plans',
+    image: null,
+  },
+  {
+    _id: 'f3',
+    type: 'offer',
+    title: 'Paving Block Discount',
+    body: 'Order 500+ paving blocks and get free delivery to any location in Dar es Salaam.',
+    badge: 'Offer',
+    color: 'gold',
+    link: '/services/paving',
+    linkLabel: 'Learn More',
+    image: null,
+  },
+]
+
+const offerColorMap: Record<string, { bg: string; border: string; badge: string; accent: string; iconColor: string }> = {
+  red:  { bg: 'bg-white',      border: 'border-red-200',    badge: 'bg-brand-red text-white',   accent: 'bg-brand-red',   iconColor: 'text-brand-red' },
+  navy: { bg: 'bg-white',      border: 'border-blue-200',   badge: 'bg-brand-navy text-white',  accent: 'bg-brand-navy',  iconColor: 'text-brand-navy' },
+  gold: { bg: 'bg-white',      border: 'border-yellow-200', badge: 'bg-brand-gold text-white',  accent: 'bg-brand-gold',  iconColor: 'text-brand-gold' },
+  green:{ bg: 'bg-white',      border: 'border-green-200',  badge: 'bg-green-600 text-white',   accent: 'bg-green-600',   iconColor: 'text-green-600' },
+}
+
 export default function HomePage() {
   const [properties,       setProperties]       = useState<Property[]>([])
   const [testimonials,     setTestimonials]     = useState<any[]>([])
   const [projects,         setProjects]         = useState<any[]>([])
+  const [offers,           setOffers]           = useState<any[]>([])
+  const [clientLogos,      setClientLogos]      = useState<any[]>([])
   const [videoPlaying,     setVideoPlaying]     = useState(true)
   const [muted,            setMuted]            = useState(true)
   const [searchQ,          setSearchQ]          = useState('')
@@ -42,6 +89,8 @@ export default function HomePage() {
     getProperties({ featured: 'true', limit: '6' }).then(d => setProperties(d.properties || [])).catch(() => {})
     getTestimonials().then(d => setTestimonials(Array.isArray(d) ? d.slice(0, 3) : [])).catch(() => {})
     getProjects().then(d => setProjects(Array.isArray(d) ? d.slice(0, 6) : [])).catch(() => {})
+    getOffers().then(d => setOffers(Array.isArray(d) ? d : [])).catch(() => {})
+    getClientLogos().then(d => setClientLogos(Array.isArray(d) ? d : [])).catch(() => {})
   }, [])
 
   const toggleHeroVideo = () => {
@@ -50,141 +99,91 @@ export default function HomePage() {
       setVideoPlaying(!videoPlaying)
     }
   }
-
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !muted
-      setMuted(!muted)
-    }
+    if (videoRef.current) { videoRef.current.muted = !muted; setMuted(!muted) }
   }
-
   const toggleCompVideo = () => {
     if (compVideoRef.current) {
-      if (compVideoPlaying) {
-        compVideoRef.current.pause()
-      } else {
-        compVideoRef.current.play()
-        compVideoRef.current.muted = compMuted
-      }
+      if (compVideoPlaying) { compVideoRef.current.pause() }
+      else { compVideoRef.current.play(); compVideoRef.current.muted = compMuted }
       setCompVideoPlaying(!compVideoPlaying)
     }
   }
-
   const toggleCompMute = () => {
-    if (compVideoRef.current) {
-      compVideoRef.current.muted = !compMuted
-      setCompMuted(!compMuted)
-    }
+    if (compVideoRef.current) { compVideoRef.current.muted = !compMuted; setCompMuted(!compMuted) }
   }
+
+  const displayOffers = offers.length > 0 ? offers : fallbackOffers
 
   return (
     <div>
 
       {/* ═══════════════════════════════════════════════════
-          HERO — dark navy with background video
+          HERO
       ═══════════════════════════════════════════════════ */}
       <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-brand-navy">
-        {/* Background video */}
         <div className="absolute inset-0 z-0">
-          <video
-            ref={videoRef}
-            autoPlay muted loop playsInline
-            className="w-full h-full object-cover opacity-30"
-          >
+          <video ref={videoRef} autoPlay muted loop playsInline className="w-full h-full object-cover opacity-30">
             <source src={`${API}/uploads/sample.mp4`} type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/90 via-brand-navy/75 to-brand-navy/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-navy via-transparent to-transparent" />
         </div>
-
-        {/* Left red accent line */}
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-red z-10" />
-
-        {/* Hero video controls */}
         <div className="absolute bottom-32 right-6 z-20 flex gap-2">
-          <button
-            onClick={toggleMute}
-            className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all"
-            title={muted ? 'Unmute' : 'Mute'}
-          >
+          <button onClick={toggleMute} className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all">
             {muted ? <VolumeX size={13} className="text-white" /> : <Volume2 size={13} className="text-white" />}
           </button>
-          <button
-            onClick={toggleHeroVideo}
-            className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all"
-            title={videoPlaying ? 'Pause' : 'Play'}
-          >
+          <button onClick={toggleHeroVideo} className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all">
             {videoPlaying ? <Pause size={13} className="text-white" /> : <Play size={13} className="text-white ml-0.5" />}
           </button>
         </div>
-
-        {/* Hero content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="max-w-2xl">
-
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 border border-brand-red/40 bg-brand-red/10 text-red-300 px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-widest mb-8">
               <span className="w-1.5 h-1.5 bg-brand-red rounded-full animate-pulse" />
               TUNAJENGA KWA GHARAMA NAFUU · MALIPO BAADA YA KUKABIDHIWA NYUMBA YAKO
             </div>
-
-            {/* Headline */}
             <h1 className="font-heading font-bold text-white leading-[1.05] mb-6">
               <span className="text-5xl sm:text-6xl lg:text-7xl block">BUILD YOUR DREAM HOUSE</span>
               <span className="text-brand-red italic font-light tracking-wide text-3xl sm:text-5xl block mt-1">PAY AFTERWARDS</span>
-              <span className="text-yellow-300 text-xl sm:text-3xl font-semibold block mt-2 leading-snug">
-                MTEJA HUTONUNUA HATA MSUMARI.
-              </span>
+              <span className="text-yellow-300 text-xl sm:text-3xl font-semibold block mt-2 leading-snug">MTEJA HUTONUNUA HATA MSUMARI.</span>
             </h1>
-
             <p className="text-blue-200 text-lg leading-relaxed mb-10 max-w-xl">
-              Kifaru Building &amp; Real Estate Co. Ltd — delivering quality homes, paving solutions and
-              commercial buildings across Tanzania since 2007.
+              Kifaru Building &amp; Real Estate Co. Ltd — delivering quality homes, paving solutions and commercial buildings across Tanzania since 2007.
             </p>
-
-            {/* Search bar */}
             <div className="bg-white rounded-sm p-2 flex flex-col sm:flex-row gap-2 mb-6 max-w-xl shadow-2xl">
               <div className="flex-1 flex items-center gap-3 px-3">
                 <MapPin size={16} className="text-brand-red flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Search location or property type..."
+                <input type="text" placeholder="Search location or property type..."
                   className="flex-1 text-sm outline-none bg-transparent text-gray-800 placeholder-gray-400 py-2"
-                  value={searchQ}
-                  onChange={e => setSearchQ(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (window.location.href = `/properties${searchQ ? `?q=${searchQ}` : ''}`)}
-                />
+                  value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (window.location.href = `/properties${searchQ ? `?q=${searchQ}` : ''}`)} />
               </div>
               <Link href={`/properties${searchQ ? `?q=${searchQ}` : ''}`} className="btn-primary justify-center">
                 <Search size={15} /> Search
               </Link>
             </div>
-
-            {/* Quick tags */}
             <div className="flex flex-wrap gap-2">
               {['Houses for Sale', 'Apartments', 'Land & Plots', 'Paving Blocks'].map(tag => (
                 <Link key={tag} href={`/properties?q=${encodeURIComponent(tag)}`}
-                  className="text-xs text-white/70 border border-white/20 px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white transition-all">
-                  {tag}
-                </Link>
+                  className="text-xs text-white/70 border border-white/20 px-3 py-1.5 rounded-sm hover:bg-white/10 hover:text-white transition-all">{tag}</Link>
               ))}
-              <Link href="/floorplans"
-                className="text-xs text-yellow-300/80 border border-yellow-300/30 px-3 py-1.5 rounded-sm hover:bg-yellow-300/10 hover:text-yellow-300 transition-all">
+              <Link href="/floorplans" className="text-xs text-yellow-300/80 border border-yellow-300/30 px-3 py-1.5 rounded-sm hover:bg-yellow-300/10 hover:text-yellow-300 transition-all">
                 Floor Plans
               </Link>
             </div>
           </div>
         </div>
-
         {/* Stats bar */}
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-brand-navy/95 border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { value: '17+',  label: 'Years Experience' },
-                { value: '19+',  label: 'Projects Completed' },
+                { value: '30+',  label: 'Projects Completed' },
                 { value: '3',    label: 'Cities Covered' },
-                { value: '200+', label: 'Happy Clients' },
+                { value: '100+', label: 'Happy Clients' },
               ].map(s => (
                 <div key={s.label} className="text-center">
                   <p className="font-heading font-bold text-2xl text-white">{s.value}</p>
@@ -197,43 +196,24 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          COMPANY VIDEO CARD — white background
+          COMPANY VIDEO CARD
       ═══════════════════════════════════════════════════ */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-
-            {/* Clickable video card */}
-            <div
-              className="relative rounded-sm overflow-hidden shadow-xl border border-gray-100 bg-brand-navy group cursor-pointer"
-              onClick={toggleCompVideo}
-            >
-              <video
-                ref={compVideoRef}
-                className="w-full aspect-video object-cover opacity-80 group-hover:opacity-90 transition-opacity"
-                loop
-                playsInline
-                muted
-                onEnded={() => setCompVideoPlaying(false)}
-              >
+            <div className="relative rounded-sm overflow-hidden shadow-xl border border-gray-100 bg-brand-navy group cursor-pointer" onClick={toggleCompVideo}>
+              <video ref={compVideoRef} className="w-full aspect-video object-cover opacity-80 group-hover:opacity-90 transition-opacity" loop playsInline muted onEnded={() => setCompVideoPlaying(false)}>
                 <source src={`${API}/uploads/sample.mp4`} type="video/mp4" />
               </video>
-
-              {/* Play overlay — shown when paused */}
               {!compVideoPlaying && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-navy/50">
-                  <div
-                    className="flex items-center justify-center bg-brand-red rounded-full shadow-2xl hover:scale-110 transition-transform mb-3"
-                    style={{ width: 72, height: 72 }}
-                  >
+                  <div className="flex items-center justify-center bg-brand-red rounded-full shadow-2xl hover:scale-110 transition-transform mb-3" style={{ width: 72, height: 72 }}>
                     <Play size={28} className="text-white ml-1.5" />
                   </div>
                   <p className="text-white font-heading font-semibold text-lg">Watch Our Story</p>
                   <p className="text-blue-200 text-sm mt-1">Tunajenga kwa gharama nafuu</p>
                 </div>
               )}
-
-              {/* Bottom label — shown when paused */}
               {!compVideoPlaying && (
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-sm px-4 py-2 flex items-center justify-between">
@@ -242,47 +222,33 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-
-              {/* Controls — shown when playing */}
               {compVideoPlaying && (
                 <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={e => { e.stopPropagation(); toggleCompMute() }}
-                    className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all"
-                    title={compMuted ? 'Unmute' : 'Mute'}
-                  >
+                  <button onClick={e => { e.stopPropagation(); toggleCompMute() }} className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-all">
                     {compMuted ? <VolumeX size={13} className="text-white" /> : <Volume2 size={13} className="text-white" />}
                   </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); toggleCompVideo() }}
-                    className="w-9 h-9 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center transition-colors"
-                  >
+                  <button onClick={e => { e.stopPropagation(); toggleCompVideo() }} className="w-9 h-9 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center transition-colors">
                     <Pause size={13} className="text-white" />
                   </button>
                 </div>
               )}
             </div>
-
-            {/* Company description */}
             <div>
               <p className="section-subtitle">Who We Are</p>
               <h2 className="section-title mb-2">Kifaru Building & Real Estate Company Limited</h2>
               <div className="gold-line" />
               <p className="text-gray-600 leading-relaxed mb-5">
-                Founded in 2007, Kifaru Building Company Limited is a CRB Class 4 registered contractor —
-                one of Tanzania's most trusted names in residential construction, real estate and paving block supply.
+                Founded in 2007, Kifaru Building Company Limited is a CRB Class 4 registered contractor — one of Tanzania's most trusted names in residential construction, real estate and paving block supply.
               </p>
               <p className="text-gray-600 leading-relaxed mb-8">
-                From our signature{' '}
-                <strong className="text-brand-navy">"pay after handover"</strong>{' '}
-                model to nationwide paving delivery, we've helped over 200 families and businesses build
-                quality properties at affordable prices.
+                From our signature <strong className="text-brand-navy">"pay after handover"</strong> model to nationwide paving delivery, we've helped over 100 families and businesses build quality properties at affordable prices.
               </p>
               <div className="space-y-3 mb-8">
                 {[
-                  'CRB Class 5 Registered Building Contractor',
+                  'CRB CNL Works — Class 4, C4/731/02/2026',
+                  'CRB Building Works — Class 4, B4/895/02/2026',
                   'VAT & TRA Registered — fully tax compliant',
-                  '19+ completed projects across 5 regions',
+                  '30+ completed projects across 5 regions',
                   'Modern plant fleet including 9 tipper trucks',
                 ].map(item => (
                   <div key={item} className="flex items-center gap-3">
@@ -292,7 +258,7 @@ export default function HomePage() {
                 ))}
               </div>
               <div className="flex gap-3 flex-wrap">
-                <Link href="/about"    className="btn-outline">About Us</Link>
+                <Link href="/about" className="btn-outline">About Us</Link>
                 <Link href="/projects" className="btn-primary">View Projects <ChevronRight size={14} /></Link>
               </div>
             </div>
@@ -301,7 +267,198 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          PROPERTY CATEGORIES — light gray
+          OFFERS & ANNOUNCEMENTS
+      ═══════════════════════════════════════════════════ */}
+      <section className="py-14 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Bell size={14} className="text-brand-red" />
+                <p className="section-subtitle !mb-0">Latest Updates</p>
+              </div>
+              <h2 className="section-title !mb-0">Offers &amp; Announcements</h2>
+              <div className="gold-line mt-2" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {displayOffers.map((offer: any) => {
+              const colors = offerColorMap[offer.color || 'red']
+              const isAnnouncement = offer.type === 'announcement'
+              const imgUrl = offer.image
+                ? (offer.image.startsWith('http') ? offer.image : `${API}/uploads/${offer.image}`)
+                : null
+
+              return (
+                <div key={offer._id} className={`rounded-sm border ${colors.border} ${colors.bg} overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex flex-col`}>
+
+                  {/* Image header if uploaded, otherwise colored accent bar */}
+                  {imgUrl ? (
+                    <div className="relative h-44 overflow-hidden flex-shrink-0">
+                      <img
+                        src={imgUrl}
+                        alt={offer.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Dark gradient overlay at bottom */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      {/* Badge pinned top-left on image */}
+                      {offer.badge && (
+                        <span className={`absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full ${colors.badge} shadow-sm`}>
+                          {offer.badge}
+                        </span>
+                      )}
+                      {/* Type icon pinned top-right */}
+                      <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+                        {isAnnouncement
+                          ? <Bell size={13} className={colors.iconColor} />
+                          : <Tag  size={13} className={colors.iconColor} />}
+                      </div>
+                      {/* Color accent bar at bottom of image */}
+                      <div className={`absolute bottom-0 left-0 right-0 h-1 ${colors.accent}`} />
+                    </div>
+                  ) : (
+                    /* No image — just a thick top accent bar */
+                    <div className={`h-2 ${colors.accent} flex-shrink-0`} />
+                  )}
+
+                  {/* Card body */}
+                  <div className="p-6 flex flex-col flex-1">
+                    {/* Type label + badge (when no image) */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {!imgUrl && (
+                        <>
+                          {isAnnouncement
+                            ? <Bell size={14} className={colors.iconColor} />
+                            : <Tag  size={14} className={colors.iconColor} />}
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{offer.type}</span>
+                        </>
+                      )}
+                      {imgUrl && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{offer.type}</span>
+                      )}
+                      {offer.badge && !imgUrl && (
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${colors.badge} ml-auto`}>
+                          {offer.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-heading font-bold text-brand-navy text-base mb-2 leading-snug">{offer.title}</h3>
+
+                    {/* Body */}
+                    <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-5">{offer.body}</p>
+
+                    {/* CTA link */}
+                    {offer.link && (
+                      <a
+                        href={offer.link}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${colors.iconColor} hover:underline mt-auto`}
+                      >
+                        {offer.linkLabel || 'Learn More'} <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          CLIENT LOGOS — AUTO-SCROLL STRIP
+          Always rendered; shows placeholder when empty
+      ═══════════════════════════════════════════════════ */}
+      <section className="py-10 bg-white border-t border-gray-100 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Trusted By Our Clients &amp; Partners</p>
+          </div>
+
+          {clientLogos.length > 0 ? (
+            /* Auto-scroll marquee — duplicate list so it loops seamlessly */
+            <div className="relative">
+              {/* Left fade */}
+              <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+              {/* Right fade */}
+              <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+              <div className="overflow-hidden">
+                <div
+                  className="flex items-center gap-14 py-2"
+                  style={{
+                    animation: 'logoScroll 30s linear infinite',
+                    width: 'max-content',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.animationPlayState = 'paused')}
+                  onMouseLeave={e => (e.currentTarget.style.animationPlayState = 'running')}
+                >
+                  {/* Render twice for seamless loop */}
+                  {[...clientLogos, ...clientLogos].map((cl: any, i: number) => {
+                    const imgUrl = cl.logo?.startsWith('http') ? cl.logo : `${API}/uploads/${cl.logo}`
+                    return (
+                      <div key={`${cl._id}-${i}`} className="flex-shrink-0 flex flex-col items-center gap-2 group">
+                        <div
+                          className="flex items-center justify-center transition-all duration-300"
+                          style={{
+                            width: 120,
+                            height: 48,
+                            filter: 'grayscale(100%)',
+                            opacity: 0.55,
+                          }}
+                          onMouseEnter={e => {
+                            ;(e.currentTarget as HTMLDivElement).style.filter = 'grayscale(0%)'
+                            ;(e.currentTarget as HTMLDivElement).style.opacity = '1'
+                          }}
+                          onMouseLeave={e => {
+                            ;(e.currentTarget as HTMLDivElement).style.filter = 'grayscale(100%)'
+                            ;(e.currentTarget as HTMLDivElement).style.opacity = '0.55'
+                          }}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={cl.name || 'Client logo'}
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                        {cl.name && (
+                          <p className="text-[10px] text-gray-400 group-hover:text-gray-600 transition-colors text-center whitespace-nowrap">
+                            {cl.name}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Keyframe style injected inline */}
+              <style>{`
+                @keyframes logoScroll {
+                  0%   { transform: translateX(0); }
+                  100% { transform: translateX(-50%); }
+                }
+              `}</style>
+            </div>
+          ) : (
+            /* Placeholder skeleton when no logos added yet */
+            <div className="flex items-center justify-center gap-10 py-4 opacity-25">
+              {[140, 100, 120, 90, 130, 105].map((w, i) => (
+                <div
+                  key={i}
+                  className="bg-gray-300 rounded-sm flex-shrink-0"
+                  style={{ width: w, height: 36 }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          PROPERTY CATEGORIES
       ═══════════════════════════════════════════════════ */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -326,7 +483,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          FEATURED PROPERTIES — white
+          FEATURED PROPERTIES
       ═══════════════════════════════════════════════════ */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -336,12 +493,10 @@ export default function HomePage() {
               <h2 className="section-title">Featured Properties</h2>
               <div className="gold-line" />
             </div>
-            <Link href="/properties"
-              className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-brand-red hover:gap-3 transition-all">
+            <Link href="/properties" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-brand-red hover:gap-3 transition-all">
               View all <ArrowRight size={15} />
             </Link>
           </div>
-
           {properties.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map(p => <PropertyCard key={p._id} property={p} />)}
@@ -357,7 +512,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          FLOOR PLANS STRIP — brand-navy
+          FLOOR PLANS STRIP
       ═══════════════════════════════════════════════════ */}
       <section className="py-12 bg-brand-navy">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -365,9 +520,7 @@ export default function HomePage() {
             <div>
               <p className="text-yellow-300 text-xs font-bold uppercase tracking-widest mb-2">House Packages</p>
               <h2 className="font-heading text-2xl font-bold text-white">Browse Ready Floor Plans</h2>
-              <p className="text-blue-200 text-sm mt-2">
-                2-bedroom to 5-bedroom packages from <strong className="text-white">TZS 28M</strong> — pay after handover.
-              </p>
+              <p className="text-blue-200 text-sm mt-2">2-bedroom to 5-bedroom packages from <strong className="text-white">TZS 28M</strong> — pay after handover.</p>
             </div>
             <div className="flex gap-3 flex-shrink-0">
               <Link href="/floorplans" className="btn-primary">View Floor Plans <ChevronRight size={14} /></Link>
@@ -378,7 +531,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          PAVING SECTION — light gray
+          PAVING SECTION
       ═══════════════════════════════════════════════════ */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -388,8 +541,7 @@ export default function HomePage() {
               <h2 className="section-title mb-2">Premium Paving Solutions</h2>
               <div className="gold-line" />
               <p className="text-gray-600 leading-relaxed mb-8">
-                We manufacture and supply high-quality paving blocks, kerbstones and interlocking pavers in
-                multiple shapes, sizes and colours — suitable for driveways, roads, public plazas and commercial floors.
+                We manufacture and supply high-quality paving blocks, kerbstones and interlocking pavers in multiple shapes, sizes and colours — suitable for driveways, roads, public plazas and commercial floors.
               </p>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {[
@@ -404,22 +556,17 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <Link href="/services/paving" className="btn-primary">
-                View Paving Products <ChevronRight size={15} />
-              </Link>
+              <Link href="/services/paving" className="btn-primary">View Paving Products <ChevronRight size={15} /></Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 h-56 rounded-sm overflow-hidden shadow-md">
-                <img src={`${API}/uploads/paving_grey.jpg`} alt="Grey paving"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={`${API}/uploads/paving_grey.jpg`} alt="Grey paving" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="h-44 rounded-sm overflow-hidden shadow-md">
-                <img src={`${API}/uploads/paving_red.jpg`} alt="Red paving"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={`${API}/uploads/paving_red.jpg`} alt="Red paving" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="h-44 rounded-sm overflow-hidden shadow-md">
-                <img src={`${API}/uploads/paving_hex.jpg`} alt="Hex paving"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={`${API}/uploads/paving_hex.jpg`} alt="Hex paving" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
               </div>
             </div>
           </div>
@@ -427,42 +574,36 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          WHY KIFARU — dark navy
+          WHY KIFARU
       ═══════════════════════════════════════════════════ */}
       <section className="py-20 bg-brand-navy">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Stacked images */}
             <div className="relative h-[440px] hidden lg:block">
               <div className="absolute top-0 left-0 w-[68%] h-[70%] rounded-sm overflow-hidden shadow-2xl border-4 border-brand-navy">
-                <img src={`${API}/uploads/house_aerial1.jpg`} alt="Construction site"
-                  className="w-full h-full object-cover" />
+                <img src={`${API}/uploads/house_aerial1.jpg`} alt="Construction site" className="w-full h-full object-cover" />
               </div>
               <div className="absolute bottom-0 right-0 w-[56%] h-[52%] rounded-sm overflow-hidden shadow-2xl border-4 border-brand-navy">
-                <img src={`${API}/uploads/house_modern.jpg`} alt="Modern house"
-                  className="w-full h-full object-cover" />
+                <img src={`${API}/uploads/house_modern.jpg`} alt="Modern house" className="w-full h-full object-cover" />
               </div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-red text-white text-center px-6 py-5 rounded-sm shadow-2xl z-10">
                 <p className="font-heading text-3xl font-bold">17+</p>
                 <p className="text-xs uppercase tracking-widest text-red-200 mt-0.5">Years Experience</p>
               </div>
             </div>
-
             <div>
               <p className="section-subtitle-gold">Why Choose Kifaru</p>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-2">
-                Tanzania's Most Trusted Building Partner
-              </h2>
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-2">Tanzania's Most Trusted Building Partner</h2>
               <div className="w-12 h-0.5 bg-brand-red mt-3 mb-6" />
               <p className="text-blue-200 leading-relaxed mb-8">
-                For over 17 years, Kifaru has been helping Tanzanians build and own quality homes at affordable
-                prices. CRB registered, VAT compliant, operating across Dar es Salaam, Arusha and Dodoma.
+                For over 17 years, Kifaru has been helping Tanzanians build and own quality homes at affordable prices. CRB registered, VAT compliant, operating across Dar es Salaam, Arusha and Dodoma.
               </p>
               <div className="space-y-3 mb-8">
                 {[
-                  'CRB Class 5 Registered (B5/1691/11/2023)',
+                  'CRB CNL Works — Class 4, C4/731/02/2026',
+                  'CRB Building Works — Class 4, B4/895/02/2026',
                   'VAT & TRA Registered — fully tax compliant',
-                  '19+ completed projects across 5 regions',
+                  '30+ completed projects across 5 regions',
                   'Pay after handover — no upfront risk to you',
                 ].map(item => (
                   <div key={item} className="flex items-center gap-3">
@@ -492,7 +633,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          RECENT PROJECTS — light gray
+          RECENT PROJECTS
       ═══════════════════════════════════════════════════ */}
       {projects.length > 0 && (
         <section className="py-20 bg-gray-50">
@@ -503,52 +644,37 @@ export default function HomePage() {
                 <h2 className="section-title">Recent Projects</h2>
                 <div className="gold-line" />
               </div>
-              <Link href="/projects"
-                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-brand-red hover:gap-3 transition-all">
+              <Link href="/projects" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-brand-red hover:gap-3 transition-all">
                 All projects <ArrowRight size={15} />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((p: any, i: number) => {
-                const fallbacks = [
-                  `${API}/uploads/house_aerial1.jpg`,
-                  `${API}/uploads/house_aerial2.jpg`,
-                  `${API}/uploads/house_modern.jpg`,
-                ]
-                const imgUrl = p.image
-                  ? (p.image.startsWith('http') ? p.image : `${API}/uploads/${p.image}`)
-                  : fallbacks[i % 3]
+                const fallbacks = [`${API}/uploads/house_aerial1.jpg`, `${API}/uploads/house_aerial2.jpg`, `${API}/uploads/house_modern.jpg`]
+                const imgUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API}/uploads/${p.image}`) : fallbacks[i % 3]
                 return (
-                  <div key={p._id}
-                    className="bg-white border border-gray-100 rounded-sm overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                  <div key={p._id} className="bg-white border border-gray-100 rounded-sm overflow-hidden group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                     <div className="h-48 overflow-hidden">
-                      <img src={imgUrl} alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={imgUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                     <div className="p-5">
-                      <p className="text-xs text-brand-gold font-semibold uppercase tracking-widest mb-1">
-                        {p.location} · {p.year}
-                      </p>
-                      <h3 className="font-heading font-semibold text-brand-navy mb-2 text-sm group-hover:text-brand-red transition-colors">
-                        {p.name}
-                      </h3>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${p.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                        {p.status}
-                      </span>
+                      <p className="text-xs text-brand-gold font-semibold uppercase tracking-widest mb-1">{p.location} · {p.year}</p>
+                      <h3 className="font-heading font-semibold text-brand-navy mb-2 text-sm group-hover:text-brand-red transition-colors">{p.name}</h3>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${p.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
                     </div>
                   </div>
                 )
               })}
             </div>
             <div className="text-center mt-10">
-              <Link href="/projects" className="btn-outline">View All 19+ Projects</Link>
+              <Link href="/projects" className="btn-outline">View All 30+ Projects</Link>
             </div>
           </div>
         </section>
       )}
 
       {/* ═══════════════════════════════════════════════════
-          TESTIMONIALS — white
+          TESTIMONIALS
       ═══════════════════════════════════════════════════ */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -571,9 +697,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
                 <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
-                  <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                    {t.name?.[0]}
-                  </div>
+                  <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-sm flex-shrink-0">{t.name?.[0]}</div>
                   <div>
                     <p className="font-semibold text-brand-navy text-sm">{t.name}</p>
                     <p className="text-xs text-gray-400">{t.role}</p>
@@ -586,20 +710,16 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          BOOKING SECTION — light gray
+          BOOKING SECTION
       ═══════════════════════════════════════════════════ */}
       <section className="py-20 bg-gray-50" id="booking">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
-            {/* Contact info */}
             <div>
               <p className="section-subtitle">Get In Touch</p>
               <h2 className="section-title mb-2">Book a Consultation</h2>
               <div className="gold-line" />
-              <p className="text-gray-600 leading-relaxed mb-10">
-                Whether you're planning a new home, a commercial building or a paving project —
-                talk to our experts today.
-              </p>
+              <p className="text-gray-600 leading-relaxed mb-10">Whether you're planning a new home, a commercial building or a paving project — talk to our experts today.</p>
               <div className="space-y-5">
                 {[
                   { icon: Phone,  label: 'Phone / WhatsApp', value: '+255 714 940 231  ·  +255 713 860 510' },
@@ -618,22 +738,15 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-
-              {/* WhatsApp shortcut */}
-              <a
-                href="https://wa.me/255714940231?text=Hello%2C%20I'm%20interested%20in%20Kifaru%20services.%20Please%20contact%20me."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-8 inline-flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm px-6 py-3 rounded-sm transition-colors shadow-sm"
-              >
+              <a href="https://wa.me/255714940231?text=Hello%2C%20I'm%20interested%20in%20Kifaru%20services.%20Please%20contact%20me."
+                target="_blank" rel="noopener noreferrer"
+                className="mt-8 inline-flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm px-6 py-3 rounded-sm transition-colors shadow-sm">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white flex-shrink-0">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
                 Chat with us on WhatsApp
               </a>
             </div>
-
-            {/* Booking form */}
             <div className="bg-white border border-gray-200 rounded-sm p-8 shadow-sm">
               <h3 className="font-heading font-bold text-brand-navy text-xl mb-1">Request a Consultation</h3>
               <p className="text-sm text-gray-500 mb-6">Fill in the form and our team will contact you within 24 hours.</p>
@@ -644,20 +757,15 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          CTA BANNER — brand-red
+          CTA BANNER
       ═══════════════════════════════════════════════════ */}
       <section className="py-16 bg-brand-red">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Build Your Dream Property?
-          </h2>
-          <p className="text-red-100 text-base mb-8 max-w-lg mx-auto">
-            Free consultation, no obligations. Build your dream — pay afterwards.
-          </p>
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">Ready to Build Your Dream Property?</h2>
+          <p className="text-red-100 text-base mb-8 max-w-lg mx-auto">Free consultation, no obligations. Build your dream — pay afterwards.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contact" className="btn-ghost">Book a Free Consultation</Link>
-            <a href="tel:+255714940231"
-              className="flex items-center gap-2 text-white font-semibold text-sm hover:text-red-200 transition-colors">
+            <a href="tel:+255714940231" className="flex items-center gap-2 text-white font-semibold text-sm hover:text-red-200 transition-colors">
               <Phone size={16} /> +255 714 940 231
             </a>
           </div>

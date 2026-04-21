@@ -1,6 +1,14 @@
 import type { Metadata } from 'next'
+import { Roboto } from 'next/font/google'
 import './globals.css'
 import SiteShell from '@/components/layout/SiteShell'
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-roboto',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Kifaru Real Estate & Building Co. Ltd — Tunajenga kwa gharama nafuu',
@@ -11,7 +19,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen bg-white text-gray-800">
+      <body className={`${roboto.className} flex flex-col min-h-screen bg-white text-gray-800`}>
         <SiteShell>{children}</SiteShell>
       </body>
     </html>

@@ -66,8 +66,19 @@ export const createTeam = (data: FormData) => api.post('/team', data).then(r => 
 export const updateTeam = (id: string, data: FormData) => api.put(`/team/${id}`, data).then(r => r.data)
 export const deleteTeam = (id: string) => api.delete(`/team/${id}`).then(r => r.data)
 
-// Certificates
 export const getCertificates   = ()                            => api.get('/certificates').then(r => r.data)
 export const createCertificate = (data: FormData)              => api.post('/certificates', data).then(r => r.data)
 export const updateCertificate = (id: string, data: FormData)  => api.put(`/certificates/${id}`, data).then(r => r.data)
 export const deleteCertificate = (id: string)                  => api.delete(`/certificates/${id}`).then(r => r.data)
+
+// ── Offers & Announcements ──────────────────────────────────────────────────
+export const getOffers    = () => api.get('/offers').then(r => r.data)
+export const createOffer  = (data: any) => api.post('/offers', data).then(r => r.data)
+export const updateOffer  = (id: string, data: any) => api.put(`/offers/${id}`, data).then(r => r.data)
+export const deleteOffer  = (id: string) => api.delete(`/offers/${id}`).then(r => r.data)
+
+// ── Client Logos ────────────────────────────────────────────────────────────
+export const getClientLogos    = () => api.get('/clientlogos').then(r => r.data)
+export const createClientLogo  = (data: FormData) => api.post('/clientlogos', data).then(r => r.data)
+export const updateClientLogo  = (id: string, data: FormData) => api.put(`/clientlogos/${id}`, data).then(r => r.data)
+export const deleteClientLogo  = (id: string) => api.delete(`/clientlogos/${id}`).then(r => r.data)
