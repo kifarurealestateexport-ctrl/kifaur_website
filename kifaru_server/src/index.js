@@ -50,6 +50,8 @@ app.use('/api/equipment',    require('./routes/equipment'))
 app.use('/api/gallery',      require('./routes/gallery'))
 app.use('/api/certificates', require('./routes/certificates'))
 app.use('/api/team',         require('./routes/team'))
+app.use('/api/offers',       require('./routes/offers'))
+app.use('/api/clientlogos',  require('./routes/clientlogos'))
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', db: 'mongodb' }))
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }))
