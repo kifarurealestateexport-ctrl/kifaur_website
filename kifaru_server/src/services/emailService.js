@@ -1,7 +1,15 @@
-const { Resend } = require('resend')
+const nodemailer = require('nodemailer')
 
-// ─── RESEND CLIENT ────────────────────────────────────────────────────────────
-const resend = new Resend(process.env.RESEND_API_KEY || 're_ENtUyKBA_4pyDSUe2mSdExqirfHwnwSWh')
+// ─── TRANSPORTER ─────────────────────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+  port: parseInt(process.env.SMTP_PORT || '465'),
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  }
+})
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const NAVY  = '#1a237e'
@@ -29,15 +37,12 @@ function baseLayout(title, bodyHtml) {
   <!-- HEADER -->
   <tr>
     <td style="background:${NAVY};border-radius:10px 10px 0 0;padding:30px 40px;text-align:center;">
-
-      <!-- LOGO IMAGE -->
       <img
         src="${siteUrl}/uploads/logo.png"
         alt="KIFARU"
         width="140"
         style="height:70px;width:auto;max-width:160px;object-fit:contain;display:block;margin:0 auto 12px;border:0;"
       />
-
       <span style="color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:2px;text-transform:uppercase;">Real Estate &amp; Building Co. Ltd</span>
       <br/>
       <span style="color:rgba(255,255,255,0.4);font-size:11px;font-style:italic;">Tunajenga kwa gharama nafuu</span>
@@ -99,7 +104,6 @@ function clientBody(data) {
     Thank you for contacting <strong>Kifaru Building Company Limited</strong>. We have received your request and our team will get back to you within <strong style="color:${RED};">24 hours</strong>.
   </p>
 
-  <!-- REF BOX -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1fb;border-left:5px solid ${NAVY};border-radius:0 8px 8px 0;margin-bottom:28px;">
     <tr>
       <td style="padding:16px 20px;">
@@ -110,7 +114,6 @@ function clientBody(data) {
     </tr>
   </table>
 
-  <!-- REQUEST SUMMARY -->
   <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee;padding-bottom:10px;">Your Request Summary</h3>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;border-collapse:separate;border-spacing:0;">
     ${row('Full Name',   name)}
@@ -121,7 +124,6 @@ function clientBody(data) {
     ${row('Message',     message ? `<em style="color:#555;">"${message}"</em>` : '')}
   </table>
 
-  <!-- NEXT STEPS -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${LIGHT};border-radius:10px;margin-bottom:28px;">
     <tr>
       <td style="padding:22px 24px;">
@@ -144,7 +146,6 @@ function clientBody(data) {
     </tr>
   </table>
 
-  <!-- CTA BUTTONS -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
     <tr>
       <td align="center" style="padding:0 4px 0 0;">
@@ -162,7 +163,6 @@ function clientBody(data) {
     </tr>
   </table>
 
-  <!-- PROMISE BANNER -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>
       <td style="background:${NAVY};border-radius:8px;padding:18px 24px;text-align:center;">
@@ -187,7 +187,6 @@ function adminBody(data) {
   const waMsg    = encodeURIComponent(`Hello ${name || ''}, this is Kifaru Building Company. We received your request and would like to discuss your project.`)
 
   return `
-  <!-- ALERT -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${RED};border-radius:8px;margin-bottom:24px;">
     <tr>
       <td style="padding:16px 22px;text-align:center;">
@@ -201,7 +200,6 @@ function adminBody(data) {
     A new request has been submitted. Please follow up within <strong style="color:${RED};">24 hours</strong> for best results.
   </p>
 
-  <!-- CLIENT DETAILS -->
   <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee;padding-bottom:10px;">Client Information</h3>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-collapse:separate;border-spacing:0;">
     ${row('Full Name',    `<strong style="font-size:16px;">${name}</strong>`)}
@@ -212,7 +210,6 @@ function adminBody(data) {
     ${row('Message',      message ? `<em style="color:#555;">"${message}"</em>` : '')}
   </table>
 
-  <!-- QUICK ACTIONS -->
   <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee;padding-bottom:10px;">Quick Actions</h3>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
     <tr>
@@ -239,7 +236,6 @@ function adminBody(data) {
     </tr>
   </table>
 
-  <!-- REMINDER -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>
       <td style="background:#fffde7;border:1px solid #ffe082;border-radius:7px;padding:14px 18px;">
@@ -255,22 +251,15 @@ function adminBody(data) {
 // ─── MAIN SEND FUNCTION ───────────────────────────────────────────────────────
 async function sendBookingEmails(bookingData) {
   const { name, phone, email, service } = bookingData
-
   const adminEmail = process.env.ADMIN_EMAIL || 'info@kifarugroup.co.tz'
-  const fromAddr   = 'Kifaru Real Estate <info@kifarugroup.co.tz>'
-
-  // Skip if RESEND_API_KEY not configured
-  if (!process.env.RESEND_API_KEY && !resend) {
-    console.log('⚠️  RESEND_API_KEY not set — skipping email')
-    return { success: false, errors: ['RESEND_API_KEY not configured'] }
-  }
+  const fromAddr   = `Kifaru Real Estate <${process.env.SMTP_USER || 'info@kifarugroup.co.tz'}>`
 
   const errors = []
 
-  // 1. Client confirmation
+  // 1. Client confirmation (only if they provided an email)
   if (email && email.includes('@')) {
     try {
-      await resend.emails.send({
+      await transporter.sendMail({
         from:    fromAddr,
         to:      email,
         subject: `✅ Request Received — Kifaru Building Co.`,
@@ -285,10 +274,10 @@ async function sendBookingEmails(bookingData) {
 
   // 2. Admin notification
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from:    fromAddr,
       to:      adminEmail,
-      replyTo: email || 'info@kifarugroup.co.tz',
+      replyTo: email || adminEmail,
       subject: `🔔 New Booking: ${name} — ${service}`,
       html:    baseLayout('New Booking Request — Admin Alert', adminBody(bookingData)),
     })
