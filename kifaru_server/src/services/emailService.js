@@ -129,10 +129,10 @@ function clientBody(data) {
       <td style="padding:22px 24px;">
         <h3 style="margin:0 0 16px;font-size:15px;color:${NAVY};font-weight:700;">What happens next?</h3>
         ${[
-          ['📋', 'Your request is reviewed by our team immediately.'],
-          ['📞', 'A Kifaru specialist calls you within 24 hours.'],
-          ['🤝', 'We schedule a free site visit or consultation.'],
-          ['📄', 'You receive a detailed quote — no hidden charges.'],
+          ['', 'Your request is reviewed by our team immediately.'],
+          ['', 'A Kifaru specialist calls you within 24 hours.'],
+          ['', 'We schedule a free site visit or consultation.'],
+          ['', 'You receive a detailed quote — no hidden charges.'],
         ].map(([icon, text], i) => `
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
           <tr>
@@ -151,13 +151,13 @@ function clientBody(data) {
       <td align="center" style="padding:0 4px 0 0;">
         <a href="tel:+255714940231"
           style="display:inline-block;background:${RED};color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 28px;border-radius:7px;">
-          📞 Call Us
+           Call Us
         </a>
       </td>
       <td align="center" style="padding:0 0 0 4px;">
         <a href="https://wa.me/255714940231?text=Hello%2C%20my%20reference%20is%20${refNo}"
           style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 28px;border-radius:7px;">
-          💬 WhatsApp
+           WhatsApp
         </a>
       </td>
     </tr>
@@ -216,13 +216,13 @@ function adminBody(data) {
       <td style="padding:0 5px 10px 0;">
         <a href="tel:${phone}"
           style="display:block;background:${NAVY};color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:13px 16px;border-radius:7px;text-align:center;">
-          📞 Call Client
+           Call Client
         </a>
       </td>
       <td style="padding:0 0 10px 5px;">
         <a href="https://wa.me/${waNumber}?text=${waMsg}"
           style="display:block;background:#25D366;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:13px 16px;border-radius:7px;text-align:center;">
-          💬 WhatsApp Client
+          WhatsApp Client
         </a>
       </td>
     </tr>
@@ -230,7 +230,7 @@ function adminBody(data) {
       <td colspan="2">
         <a href="${siteUrl}/admin"
           style="display:block;background:${LIGHT};color:${NAVY};text-decoration:none;font-weight:700;font-size:13px;padding:13px 16px;border-radius:7px;text-align:center;border:1px solid #dde1f0;">
-          🖥️ Open Admin Dashboard
+          Open Admin Dashboard
         </a>
       </td>
     </tr>
@@ -240,7 +240,7 @@ function adminBody(data) {
     <tr>
       <td style="background:#fffde7;border:1px solid #ffe082;border-radius:7px;padding:14px 18px;">
         <p style="margin:0;font-size:13px;color:#5d4037;">
-          ⏰ <strong>Action Required:</strong> Contact the client within 24 hours.
+           <strong>Action Required:</strong> Contact the client within 24 hours.
           Once done, mark the booking as "Contacted" in the Admin Panel.
         </p>
       </td>
@@ -265,7 +265,7 @@ async function sendBookingEmails(bookingData) {
         subject: `✅ Request Received — Kifaru Building Co.`,
         html:    baseLayout('Your Request Has Been Received', clientBody(bookingData)),
       })
-      console.log(`📧 Client email → ${email}`)
+      console.log(`Client email → ${email}`)
     } catch (err) {
       console.error('Client email failed:', err.message)
       errors.push(`client: ${err.message}`)
@@ -278,10 +278,10 @@ async function sendBookingEmails(bookingData) {
       from:    fromAddr,
       to:      adminEmail,
       replyTo: email || adminEmail,
-      subject: `🔔 New Booking: ${name} — ${service}`,
+      subject: ` New Booking: ${name} — ${service}`,
       html:    baseLayout('New Booking Request — Admin Alert', adminBody(bookingData)),
     })
-    console.log(`📧 Admin email → ${adminEmail}`)
+    console.log(` Admin email → ${adminEmail}`)
   } catch (err) {
     console.error('Admin email failed:', err.message)
     errors.push(`admin: ${err.message}`)
