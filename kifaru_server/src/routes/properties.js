@@ -30,8 +30,10 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
   try {
     const images = req.files?.map(f => f.path) || []
     const item = await Property.create({
-      ...req.body,
-      featured: req.body.featured === 'true',
+      title:       req.body.title,
+      description: req.body.description || '',
+      location:    req.body.location,
+      featured:    req.body.featured === 'true',
       images,
     })
     res.status(201).json(item)
@@ -45,8 +47,10 @@ router.put('/:id', auth, upload.array('images', 10), async (req, res) => {
     const newImages = req.files?.map(f => f.path) || []
     const images    = newImages.length ? [...existing.images, ...newImages] : existing.images
     const updated = await Property.findByIdAndUpdate(req.params.id, {
-      ...req.body,
-      featured: req.body.featured === 'true',
+      title:       req.body.title       || existing.title,
+      description: req.body.description || existing.description,
+      location:    req.body.location    || existing.location,
+      featured:    req.body.featured === 'true',
       images,
     }, { new: true })
     res.json(updated)
