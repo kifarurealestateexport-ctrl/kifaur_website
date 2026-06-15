@@ -471,51 +471,84 @@ function CustomersPanel({ bookings, showToast }: any) {
 
 // ─── PROPERTIES ───────────────────────────────────────────────────────────────
 function PropertiesPanel({ data, setData, showToast }: any) {
-  const empty = {title:'',price:'',type:'house',status:'sale',location:'',bedrooms:'',bathrooms:'',area:'',description:'',featured:false}
-  const [showForm,setShowForm] = useState(false)
-  const [editing,setEditing]   = useState<any>(null)
-  const [saving,setSaving]     = useState(false)
-  const [form,setForm]         = useState<any>(empty)
-  const [files,setFiles]       = useState<File[]>([])
-  const open=(p?:any)=>{setEditing(p||null);setForm(p?{title:p.title,price:p.price,type:p.type,status:p.status,location:p.location,bedrooms:p.bedrooms||'',bathrooms:p.bathrooms||'',area:p.area||'',description:p.description||'',featured:!!p.featured}:empty);setFiles([]);setShowForm(true)}
-  const save=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{const fd=new FormData();Object.entries(form).forEach(([k,v])=>fd.append(k,String(v)));files.forEach(f=>fd.append('images',f));if(editing){const u=await updateProperty(editing._id,fd);setData((d:any[])=>d.map(x=>x._id===editing._id?u:x));showToast('Updated')}else{const c=await createProperty(fd);setData((d:any[])=>[c,...d]);showToast('Created')};setShowForm(false)}catch{showToast('Failed','error')}finally{setSaving(false)}}
-  const del=async(id:string)=>{if(!confirm('Delete?'))return;try{await deleteProperty(id);setData((d:any[])=>d.filter(x=>x._id!==id));showToast('Deleted')}catch{showToast('Failed','error')}}
+  const empty = { title: '', location: '', description: '', featured: false }
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing]   = useState<any>(null)
+  const [saving, setSaving]     = useState(false)
+  const [form, setForm]         = useState<any>(empty)
+  const [files, setFiles]       = useState<File[]>([])
+
+  const open = (p?: any) => {
+    setEditing(p || null)
+    setForm(p ? { title: p.title, location: p.location, description: p.description || '', featured: !!p.featured } : empty)
+    setFiles([])
+    setShowForm(true)
+  }
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true)
+    try {
+      const fd = new FormData()
+      Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)))
+      files.forEach(f => fd.append('images', f))
+      if (editing) {
+        const u = await updateProperty(editing._id, fd)
+        setData((d: any[]) => d.map(x => x._id === editing._id ? u : x))
+        showToast('Updated')
+      } else {
+        const c = await createProperty(fd)
+        setData((d: any[]) => [c, ...d])
+        showToast('Created')
+      }
+      setShowForm(false)
+    } catch { showToast('Failed', 'error') } finally { setSaving(false) }
+  }
+
+  const del = async (id: string) => {
+    if (!confirm('Delete?')) return
+    try { await deleteProperty(id); setData((d: any[]) => d.filter(x => x._id !== id)); showToast('Deleted') }
+    catch { showToast('Failed', 'error') }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading text-2xl font-bold text-brand-navy">Properties ({data.length})</h1>
-        <button onClick={()=>open()} className={btn}><Plus size={14}/>Add Property</button>
+        <button onClick={() => open()} className={btn}><Plus size={14} />Add Property</button>
       </div>
-      {showForm&&(
+      {showForm && (
         <div className="bg-white border border-gray-200 rounded-sm p-6 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5"><h2 className="font-heading font-semibold text-brand-navy text-lg">{editing?'Edit':'New'} Property</h2><button onClick={()=>setShowForm(false)}><X size={18} className="text-gray-400"/></button></div>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-heading font-semibold text-brand-navy text-lg">{editing ? 'Edit' : 'New'} Property</h2>
+            <button onClick={() => setShowForm(false)}><X size={18} className="text-gray-400" /></button>
+          </div>
           <form onSubmit={save}>
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="col-span-2"><Fld label="Title *"><input className={inp} required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></Fld></div>
-              <Fld label="Price (TZS) *"><input className={inp} type="number" required value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></Fld>
-              <Fld label="Type"><select className={sel} value={form.type} onChange={e=>setForm({...form,type:e.target.value})}>{['house','apartment','land','commercial'].map(t=><option key={t}>{t}</option>)}</select></Fld>
-              <Fld label="Status"><select className={sel} value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="sale">For Sale</option><option value="rent">For Rent</option></select></Fld>
-              <Fld label="Location *"><input className={inp} required value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/></Fld>
-              <Fld label="Bedrooms"><input className={inp} type="number" value={form.bedrooms} onChange={e=>setForm({...form,bedrooms:e.target.value})}/></Fld>
-              <Fld label="Bathrooms"><input className={inp} type="number" value={form.bathrooms} onChange={e=>setForm({...form,bathrooms:e.target.value})}/></Fld>
-              <Fld label="Area (m²)"><input className={inp} type="number" value={form.area} onChange={e=>setForm({...form,area:e.target.value})}/></Fld>
-              <div className="col-span-2"><Fld label="Description"><textarea className={ta} rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></Fld></div>
-              <div className="col-span-2"><ImgUpload label="Images" multiple files={files} onFiles={setFiles}/></div>
-              <div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={e=>setForm({...form,featured:e.target.checked})} className="w-4 h-4 accent-brand-red"/><span className="text-sm text-gray-600 font-medium">Featured Property</span></div>
+              <div className="col-span-2"><Fld label="Title *"><input className={inp} required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Fld></div>
+              <div className="col-span-2"><Fld label="Location *"><input className={inp} required value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} /></Fld></div>
+              <div className="col-span-2"><Fld label="Description (include price, type, rooms, etc.)"><textarea className={ta} rows={5} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Fld></div>
+              <div className="col-span-2"><ImgUpload label="Images" multiple files={files} onFiles={setFiles} /></div>
+              <div className="col-span-2 flex items-center gap-2">
+                <input type="checkbox" checked={form.featured} onChange={e => setForm({ ...form, featured: e.target.checked })} className="w-4 h-4 accent-brand-red" />
+                <span className="text-sm text-gray-600 font-medium">Featured Property</span>
+              </div>
             </div>
             <div className="flex gap-3 pt-2 border-t border-gray-100">
-              <button type="submit" disabled={saving} className={`${btn} disabled:opacity-50`}>{saving?<><Loader size={13} className="animate-spin"/>Saving...</>:'Save Property'}</button>
-              <button type="button" onClick={()=>setShowForm(false)} className="px-4 py-2.5 border border-gray-200 text-gray-500 text-xs rounded-sm">Cancel</button>
+              <button type="submit" disabled={saving} className={`${btn} disabled:opacity-50`}>{saving ? <><Loader size={13} className="animate-spin" />Saving...</> : 'Save Property'}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 border border-gray-200 text-gray-500 text-xs rounded-sm">Cancel</button>
             </div>
           </form>
         </div>
       )}
-      <Tbl headers={['Image','Title','Price','Type','Status','Location','Actions']} rows={data.map((p:any)=>{
-        const img=p.images?.[0]?`${API}/uploads/${p.images[0]}`:null
-        return[img?<img src={img} className="w-12 h-10 object-cover rounded-sm border border-gray-200" alt=""/>:<div className="w-12 h-10 bg-gray-100 rounded-sm flex items-center justify-center"><ImageIcon size={14} className="text-gray-300"/></div>,
-          <span className="font-medium text-brand-navy max-w-[160px] truncate block">{p.title}</span>,`TZS ${Number(p.price).toLocaleString()}`,<span className="capitalize">{p.type}</span>,<Badge status={p.status}/>,p.location,
-          <div className="flex gap-1.5"><ABtn onClick={()=>open(p)} icon={Edit2}/><ABtn onClick={()=>del(p._id)} icon={Trash2} danger/></div>]
-      })}/>
+      <Tbl headers={['Image', 'Title', 'Location', 'Actions']} rows={data.map((p: any) => {
+        const img = p.images?.[0] ? `${API}/uploads/${p.images[0]}` : null
+        return [
+          img ? <img src={img} className="w-12 h-10 object-cover rounded-sm border border-gray-200" alt="" /> : <div className="w-12 h-10 bg-gray-100 rounded-sm flex items-center justify-center"><ImageIcon size={14} className="text-gray-300" /></div>,
+          <span className="font-medium text-brand-navy max-w-[160px] truncate block">{p.title}</span>,
+          p.location,
+          <div className="flex gap-1.5"><ABtn onClick={() => open(p)} icon={Edit2} /><ABtn onClick={() => del(p._id)} icon={Trash2} danger /></div>
+        ]
+      })} />
     </div>
   )
 }
