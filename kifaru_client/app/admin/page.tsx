@@ -28,6 +28,38 @@ import {
 
 type Panel = 'overview'|'bookings'|'customers'|'properties'|'services'|'projects'|'testimonials'|'floorplans'|'agents'|'equipment'|'gallery'|'team'|'certificates'|'homepage'
 
+// ─── IMAGE COMPRESSION ────────────────────────────────────────────────────────
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+
+        // Scale down if too large
+        const maxDim = 1920
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = (height / width) * maxDim; width = maxDim }
+          else { width = (width / height) * maxDim; height = maxDim }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob((blob) => {
+          if (blob) resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+          else resolve(file)
+        }, 'image/jpeg', 0.8) // 80% quality JPEG
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 const API = process.env.NEXT_PUBLIC_API_URL?.replace('/api','') || 'http://localhost:5001'
 const inp = 'w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-sm text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-brand-navy transition-colors'
 const sel = `${inp} cursor-pointer`
@@ -80,7 +112,22 @@ function ImgUpload({ label, multiple, file, files, onFile, onFiles, current }: a
         <ImageIcon size={22} className="text-gray-300 mx-auto mb-1"/>
         <p className="text-xs text-gray-400">{multiple?`${files?.length||0} file(s) selected`:(file?.name||'Click to upload')}</p>
         <input type="file" accept="image/*" multiple={!!multiple} className="absolute inset-0 opacity-0 cursor-pointer"
-          onChange={e=>multiple?onFiles?.(Array.from(e.target.files||[])):onFile?.(e.target.files?.[0]||null)}/>
+          onChange={async e => {
+            if (multiple) {
+              const raw = Array.from(e.target.files || [])
+              const compressed = await Promise.all(raw.map(f => compressImage(f)))
+              onFiles?.(compressed)
+            } else {
+              const raw = e.target.files?.[0] || null
+              if (raw) {
+                const compressed = await compressImage(raw)
+                onFile?.(compressed)
+              } else {
+                onFile?.(null)
+              }
+            }
+          }}
+        />
       </div>
     </Fld>
   )
@@ -527,6 +574,7 @@ function PropertiesPanel({ data, setData, showToast }: any) {
               <div className="col-span-2"><Fld label="Title *"><input className={inp} required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Fld></div>
               <div className="col-span-2"><Fld label="Location *"><input className={inp} required value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} /></Fld></div>
               <div className="col-span-2"><Fld label="Description (include price, type, rooms, etc.)"><textarea className={ta} rows={5} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Fld></div>
+              {/* Properties uses ImgUpload — compression handled inside ImgUpload */}
               <div className="col-span-2"><ImgUpload label="Images" multiple files={files} onFiles={setFiles} /></div>
               <div className="col-span-2 flex items-center gap-2">
                 <input type="checkbox" checked={form.featured} onChange={e => setForm({ ...form, featured: e.target.checked })} className="w-4 h-4 accent-brand-red" />
@@ -586,6 +634,7 @@ function SimplePanel({ title, data, setData, showToast, fields, createFn, update
                   </Fld>
                 </div>
               ))}
+              {/* ImgUpload handles compression internally for all single/multi/photo variants */}
               {withImages&&<div className="col-span-2"><ImgUpload label={withImages==='multi'?'Images':'Photo'} multiple={withImages==='multi'} file={file} files={files} onFile={setFile} onFiles={setFiles}/></div>}
             </div>
             <div className="flex gap-3 pt-2 border-t border-gray-100">
@@ -618,7 +667,18 @@ function GalleryPanel({ data, setData, showToast }: any) {
         <form onSubmit={save} className="grid grid-cols-3 gap-4 items-end">
           <Fld label="Title"><input className={inp} placeholder="Caption..." value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></Fld>
           <Fld label="Category"><select className={sel} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{['Projects','Paving','Team','Activities','Equipment','General'].map(c=><option key={c}>{c}</option>)}</select></Fld>
-          <Fld label="Image *"><div className="relative border-2 border-dashed border-gray-200 hover:border-brand-navy rounded-sm p-3 text-center cursor-pointer transition-colors"><p className="text-xs text-gray-400">{file?file.name:'Click to select'}</p><input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>setFile(e.target.files?.[0]||null)}/></div></Fld>
+          <Fld label="Image *">
+            <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-navy rounded-sm p-3 text-center cursor-pointer transition-colors">
+              <p className="text-xs text-gray-400">{file ? file.name : 'Click to select'}</p>
+              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={async e => {
+                  const raw = e.target.files?.[0] || null
+                  if (raw) setFile(await compressImage(raw))
+                  else setFile(null)
+                }}
+              />
+            </div>
+          </Fld>
           <div className="col-span-3"><button type="submit" disabled={saving||!file} className={`${btn} disabled:opacity-50`}>{saving?<><Loader size={13} className="animate-spin"/>Uploading...</>:<><Plus size={14}/>Add Photo</>}</button></div>
         </form>
       </div>
@@ -659,6 +719,7 @@ function CertificatesPanel({ data, setData, showToast }: any) {
               <Fld label="Reference No."><input className={inp} value={form.detail} onChange={e=>setForm({...form,detail:e.target.value})}/></Fld>
               <Fld label="Subtitle"><input className={inp} value={form.sub} onChange={e=>setForm({...form,sub:e.target.value})}/></Fld>
               <Fld label="Order"><input className={inp} type="number" value={form.order} onChange={e=>setForm({...form,order:e.target.value})}/></Fld>
+              {/* Compression handled inside ImgUpload */}
               <div className="col-span-2"><ImgUpload label="Certificate Image" file={file} onFile={setFile} current={editing?.image?`${API}/uploads/${editing.image}`:undefined}/></div>
             </div>
             <div className="flex gap-3 pt-2 border-t border-gray-100">
@@ -725,6 +786,7 @@ function HomepageSettingsTab({ homepage, setHomepage, showToast }: any) {
   useEffect(()=>{setForm(homepage)},[homepage])
   const save=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{const u=await updateHomepageSettings(form);setHomepage(u);showToast('Saved!')}catch{showToast('Failed','error')}finally{setSaving(false)}}
   const uploadLogo=async(file:File)=>{
+    // Logos are typically SVG/PNG brand marks — skip JPEG compression, upload as-is
     const reader=new FileReader();reader.onload=ev=>setLogoPreview(ev.target?.result as string);reader.readAsDataURL(file);setLogoUploading(true)
     try{const fd=new FormData();fd.append('logo',file);const token=localStorage.getItem('kifaru_token');const r=await fetch(`${API}/api/settings/logo`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:fd});const data=await r.json();if(r.ok){const updated=await updateHomepageSettings({...form,logoFilename:data.filename});setHomepage(updated);setForm(updated);showToast('Logo uploaded!')}else{showToast(data.error||'Upload failed','error');setLogoPreview(null)}}
     catch{showToast('Upload failed','error');setLogoPreview(null)}finally{setLogoUploading(false)}
@@ -794,6 +856,7 @@ function OffersTab({ data, setData, showToast }: any) {
               <Fld label="Badge Label"><input className={inp} placeholder="e.g. Limited Time" value={form.badge} onChange={e=>setForm({...form,badge:e.target.value})}/></Fld>
               <Fld label="Link URL"><input className={inp} placeholder="/contact" value={form.link} onChange={e=>setForm({...form,link:e.target.value})}/></Fld>
               <Fld label="Link Button Label"><input className={inp} placeholder="Book Now" value={form.linkLabel} onChange={e=>setForm({...form,linkLabel:e.target.value})}/></Fld>
+              {/* Compression handled inside ImgUpload */}
               <div className="col-span-2"><ImgUpload label="Banner Image (optional)" file={file} onFile={setFile} current={editing?.image?(editing.image.startsWith('http')?editing.image:`${API}/uploads/${editing.image}`):undefined}/></div>
             </div>
             <div className="flex gap-3 pt-2 border-t border-gray-100">
@@ -846,6 +909,7 @@ function ClientLogosTab({ data, setData, showToast }: any) {
           <Fld label="Company Name"><input className={inp} placeholder="e.g. NHC Tanzania" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></Fld>
           <Fld label="Logo Image *">
             <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-navy rounded-sm p-3 text-center cursor-pointer transition-colors">
+              {/* Client logos are brand marks (SVG/PNG) — uploaded as-is, no JPEG compression */}
               {file?<div className="flex items-center justify-center gap-2"><img src={URL.createObjectURL(file)} alt="" className="h-8 object-contain"/><span className="text-xs text-brand-navy truncate max-w-[80px]">{file.name}</span></div>:<p className="text-xs text-gray-400">Click to select PNG/SVG</p>}
               <input type="file" accept="image/*,.svg" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>setFile(e.target.files?.[0]||null)}/>
             </div>

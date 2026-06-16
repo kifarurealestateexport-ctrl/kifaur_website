@@ -52,7 +52,7 @@ export default function PropertyDetailPage() {
               </div>
               <h1 className="font-heading text-2xl md:text-3xl font-bold text-brand-navy mb-2">{property.title}</h1>
               <div className="flex items-center gap-1.5 text-gray-500 text-sm mb-4"><MapPin size={14} className="text-brand-red" />{property.location}</div>
-              <p className="font-heading text-3xl font-bold text-brand-red mb-6">{formatPrice(property.price)}{property.status === 'rent' && <span className="text-base font-normal text-gray-500">/month</span>}</p>
+              {property.price != null && (<p className="font-heading text-3xl font-bold text-brand-red mb-6">{formatPrice(property.price)}{property.status === 'rent' && <span className="text-base font-normal text-gray-500">/month</span>}</p> )}
               {(property.bedrooms || property.bathrooms || property.area) && (
                 <div className="grid grid-cols-3 gap-4 py-4 border-t border-b border-gray-100 mb-6">
                   {property.bedrooms !== undefined && <div className="text-center"><Bed size={20} className="text-brand-gold mx-auto mb-1" /><p className="font-bold text-brand-navy">{property.bedrooms}</p><p className="text-xs text-gray-400">Bedrooms</p></div>}

@@ -11,6 +11,12 @@ export interface Property {
   images: string[]
   featured?: boolean
   description?: string
+  status?: 'sale' | 'rent'
+  type?: string
+  price?: number
+  bedrooms?: number
+  bathrooms?: number
+  area?: number
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'
