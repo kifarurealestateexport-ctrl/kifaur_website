@@ -9,14 +9,14 @@ router.get('/', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }) }
 })
 
-router.post('/', auth, upload.single('photo'), async (req, res) => {
+router.post('/', auth, ...upload.single('photo'), async (req, res) => {
   try {
     const item = await Agent.create({ ...req.body, photo: req.file?.path || '' })
     res.status(201).json(item)
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
 
-router.put('/:id', auth, upload.single('photo'), async (req, res) => {
+router.put('/:id', auth, ...Agent.upload.single('photo'), async (req, res) => {
   try {
     const existing = await Agent.findById(req.params.id)
     if (!existing) return res.status(404).json({ error: 'Not found' })

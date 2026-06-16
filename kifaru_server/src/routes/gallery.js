@@ -11,14 +11,14 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, ...upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Image required' })
     res.status(201).json(await Gallery.create({ ...req.body, image: req.file.path }))
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try { await Gallery.findByIdAndDelete(req.params.id); res.json({ success: true }) }
   catch (err) { res.status(500).json({ error: err.message }) }
 })

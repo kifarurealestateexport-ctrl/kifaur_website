@@ -20,13 +20,13 @@ router.get('/', async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }) }
 })
 
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, ...upload.single('image'), async (req, res) => {
   try {
     res.json(await Offer.create({ ...req.body, image: req.file?.path || '' }))
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
+router.put('/:id', auth, ...upload.single('image'), async (req, res) => {
   try {
     const existing = await Offer.findById(req.params.id)
     if (!existing) return res.status(404).json({ error: 'Not found' })
@@ -38,7 +38,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try { await Offer.findByIdAndDelete(req.params.id); res.json({ ok: true }) }
   catch (e) { res.status(500).json({ error: e.message }) }
 })

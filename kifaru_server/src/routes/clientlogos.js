@@ -14,13 +14,13 @@ router.get('/', async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }) }
 })
 
-router.post('/', auth, upload.single('logo'), async (req, res) => {
+router.post('/', auth, ...upload.single('logo'), async (req, res) => {
   try {
     res.json(await ClientLogo.create({ name: req.body.name, logo: req.file?.path || '' }))
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
-router.put('/:id', auth, upload.single('logo'), async (req, res) => {
+router.put('/:id', auth, ...upload.single('logo'), async (req, res) => {
   try {
     const existing = await ClientLogo.findById(req.params.id)
     if (!existing) return res.status(404).json({ error: 'Not found' })

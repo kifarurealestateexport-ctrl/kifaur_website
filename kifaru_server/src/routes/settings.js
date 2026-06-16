@@ -21,7 +21,7 @@ router.get('/homepage', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
-router.put('/homepage', auth, async (req, res) => {
+router.put('/homepage', auth, ...upload.single('image'), async (req, res) => {
   try {
     const doc = await Settings.findOneAndUpdate(
       { key: 'homepage' },
@@ -33,7 +33,7 @@ router.put('/homepage', auth, async (req, res) => {
 })
 
 // POST /api/settings/logo — upload logo to Cloudinary
-router.post('/logo', auth, upload.single('logo'), async (req, res) => {
+router.post('/logo', auth, ...upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
     // req.file.path is the full Cloudinary URL
