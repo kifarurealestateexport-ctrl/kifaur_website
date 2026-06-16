@@ -19,10 +19,9 @@ const uploadToCloudinary = (buffer, originalname) =>
       (err, result) => err ? reject(err) : resolve(result.secure_url)
     ).end(buffer)
   })
-
 const memUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // increase to 50MB
 })
 
 const afterUpload = async (req, res, next) => {
